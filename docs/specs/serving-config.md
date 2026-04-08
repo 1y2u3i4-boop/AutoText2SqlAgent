@@ -21,6 +21,11 @@
 3. Запустить API Server
 4. Проверить health endpoint
 
+Health endpoint должен различать состояния:
+- `ok` - приложение, Qdrant и LLM Gateway доступны;
+- `degraded` - приложение работает, но primary provider недоступен и используется fallback provider;
+- `failed` - приложение не может обслуживать запросы из-за недоступности критической зависимости.
+
 ### Docker
 
 Предполагаются два контейнера:
@@ -34,6 +39,22 @@
 - для локальной разработки Qdrant удобно запускать в Docker, а приложение - напрямую.
 
 Два контейнера: приложение + Qdrant. Для локальной разработки Qdrant запускается через Docker, приложение - напрямую.
+
+### Docker Compose deployment
+
+Базовый deployment через `docker compose` включает:
+
+| Сервис | Назначение | Основные зависимости |
+|--------|------------|----------------------|
+| app | FastAPI API server + LangGraph orchestrator + local embedding runtime | LLM Gateway, Qdrant, целевые БД |
+| qdrant | Хранение и поиск metadata embeddings | Persistent volume |
+| otel-collector | Приём OTLP telemetry и экспорт технических метрик/трейсов | app |
+| prometheus | Сбор метрик из `/metrics` и OTEL collector | app, otel-collector |
+| loki | Централизованное хранение структурированных логов | promtail |
+| promtail | Сбор container logs и отправка в Loki | Docker engine, loki |
+| grafana | Дашборды по Prometheus/Loki | prometheus, loki |
+
+Примерная конфигурация docker-compose и observability стека приведена в папке configuration
 
 ## Конфигурация
 
@@ -154,7 +175,7 @@
 | POST /api/v1/search/{session_id}/approve | POST | Подтверждение SQL execution |
 | GET /api/v1/sessions/{session_id} | GET | Состояние сессии |
 | POST /api/v1/index/rebuild | POST | Перестроение индекса (admin) |
-| GET /health | GET | Health check |
+| GET /health | GET | Health check приложения, Qdrant и LLM Gateway |
 | GET /metrics | GET | Prometheus-совместимые метрики |
 
 ## Зависимости (Python packages)

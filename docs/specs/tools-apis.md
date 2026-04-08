@@ -51,6 +51,8 @@
 | selected_provider | string | Провайдер, выбранный gateway |
 | selected_model | string | Модель, выбранная gateway |
 | route | string | Использованный логический маршрут |
+| provider_status | string | Итог маршрутизации: primary, fallback или failed |
+| failed_provider | string \| null | Провайдер, на котором произошёл сбой до fallback |
 | usage | object | Статистика токенов |
 | latency_ms | float | Время вызова |
 | cost_usd | float | Стоимость вызова |
@@ -70,6 +72,7 @@
 - Response validation через Pydantic structured output и schema parsing в gateway
 - Max tokens ограничен для предотвращения runaway generation
 - Provider fallback срабатывает только для allowlisted маршрутов
+- При недоступности provider gateway обязан вернуть telemetry о failed_provider и результате fallback-маршрутизации
 
 ### 2. Database Tool (SQLAlchemy)
 

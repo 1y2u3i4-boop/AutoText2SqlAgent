@@ -49,6 +49,29 @@
 | llm.tokens_total | Counter | Суммарное потребление токенов | Мониторинг |
 | qdrant.index_size | Gauge | Количество документов в индексе | Мониторинг |
 
+## Дашборды и графики
+
+Для ежедневного мониторинга используются следующие дашборды:
+
+| Дашборд | Графики | Зачем нужен |
+|---------|------------------|-------------|
+| Search Health | request rate, success_rate, clarification_rate, error.rate | Быстро понять, работает ли система и не выросла ли доля неуспешных ответов |
+| Latency | e2e p50/p95, latency по шагам графа, latency LLM Gateway, latency Qdrant, latency SQL execution | Найти узкие места и деградацию по этапам |
+| Retrieval Quality | top3_accuracy, mrr, confidence distribution, доля clarification | Видеть деградацию retrieval до того, как это заметят пользователи |
+| LLM Gateway / Providers | provider_error_rate, provider_fallback_rate, latency по provider, доля запросов по route/provider | Понять, какой provider деградирует и как часто срабатывает fallback |
+| SQL Safety | sql.validation_pass_rate, доля policy reject, доля human reject, sql execution failure rate | Контролировать качество SQL generation и безопасность выполнения |
+| Cost | cost.per_task_usd, daily_usd, weekly_usd, tokens_total, cost breakdown по route/provider | Следить за бюджетом и дорогими маршрутами |
+| Infrastructure | qdrant.index_size, health status gateway/Qdrant, error.by_type | Видеть инфраструктурные сбои и состояние зависимостей |
+
+### Основные алерты
+
+- рост `error.rate` выше рабочего порога;
+- рост `latency.e2e_p95` выше целевого budget;
+- рост `llm.provider_error_rate` для одного provider;
+- резкий рост `llm.provider_fallback_rate`;
+- падение `sql.validation_pass_rate`;
+- превышение `cost.daily_usd`.
+
 ## Логи
 
 ### Формат
@@ -66,6 +89,13 @@
 | Execution | Результат выполнения SQL без содержимого строк |
 | Errors | Тип ошибки, шаг, причина, traceback |
 | Budget / Gateway | Retry, fallback, budget status, provider routing |
+
+При недоступности downstream provider в лог обязательно пишутся:
+- route;
+- failed_provider;
+- fallback_provider, если переключение удалось;
+- failure_reason;
+- request outcome после fallback.
 
 ### Что НЕ логируется
 
@@ -154,6 +184,7 @@
   - p95 latency > 15s
   - Daily cost > $7.00
   - Retrieval quality drop (если есть feedback loop)
+  - Provider error / fallback spike по LLM Gateway
 
 ### Feedback Loop
 

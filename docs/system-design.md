@@ -176,6 +176,7 @@ class ToolResult(BaseModel):
 | Сбой | Вероятность | Обнаружение | Реакция |
 |------|-------------|-------------|---------|
 | LLM Gateway недоступен / timeout | Средняя | HTTP error / timeout | Retry 2x с exponential backoff → fallback на keyword search без LLM |
+| Downstream provider в LLM Gateway недоступен | Средняя | Gateway telemetry / provider error | Переключение на fallback provider; failed provider фиксируется в логах, метриках и traces |
 | Gateway вернул невалидный structured output | Средняя | Pydantic validation failure | Retry 1x с более строгой schema parsing policy → ошибка пользователю |
 | Retriever возвращает нерелевантные результаты | Средняя | Низкий confidence score | Запрос уточнения у пользователя |
 | Целевая БД недоступна | Низкая | Connection error | Сообщение об ошибке, работа с остальными БД |
@@ -242,6 +243,7 @@ class ToolResult(BaseModel):
 |---------|------|
 | Error rate | ≤ 5% |
 | Availability | Best-effort, single instance |
+| Provider failover | Gateway должен переключать provider без изменения основного flow |
 | Data durability | Qdrant backed by Docker volume; re-indexable from sources |
 | Recovery | Manual restart; индекс Qdrant сохраняется, session state хранится в локальном SQLite без гарантий HA/failover |
 
