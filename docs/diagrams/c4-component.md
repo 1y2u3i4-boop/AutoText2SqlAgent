@@ -1,5 +1,7 @@
 # C4 Component Diagram: Agent Orchestrator
 
+> Status note: this diagram describes the legacy LangGraph orchestrator. The current production `/query` path uses a simpler FastAPI flow plus memory lookup; the graph is still kept for `/query/stream` and experiments.
+
 Внутреннее устройство ядра системы - Agent Orchestrator (LangGraph). Компоненты ниже являются внутренними частями одного runtime-модуля, а не отдельными сервисами.
 
 ```mermaid

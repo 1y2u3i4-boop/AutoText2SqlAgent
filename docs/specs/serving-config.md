@@ -46,7 +46,7 @@ Health endpoint должен различать состояния:
 
 | Сервис | Назначение | Основные зависимости |
 |--------|------------|----------------------|
-| app | FastAPI API server + LangGraph orchestrator + local embedding runtime | LLM Gateway, Qdrant, целевые БД |
+| app | FastAPI API server + LangGraph orchestrator + external embedding calls | LLM Gateway / OpenRouter, Qdrant, целевые БД |
 | qdrant | Хранение и поиск metadata embeddings | Persistent volume |
 | otel-collector | Приём OTLP telemetry и экспорт технических метрик/трейсов | app |
 | prometheus | Сбор метрик из `/metrics` и OTEL collector | app, otel-collector |
@@ -124,7 +124,6 @@ Deployment выполняется по стандартному циклу:
 - route_overrides;
 - fallback_enabled;
 - embedding_model;
-- embedding_device;
 - temperature;
 - max_tokens;
 - timeout_seconds.
@@ -201,7 +200,7 @@ Deployment выполняется по стандартному циклу:
 | Компонент | Назначение | Версия |
 |-----------|-----------|-------------|
 | llm_gateway route policy | NL analysis, reranking, response gen, SQL gen | Config-managed |
-| local_embedding_model | Локальные embeddings метаданных и запросов | Config-managed |
+| embedding_model | Embeddings метаданных и запросов через OpenAI-compatible API | Config-managed |
 
 ### Политика обновления
 
@@ -224,9 +223,7 @@ Deployment выполняется по стандартному циклу:
 | Пакет | Назначение |
 |-------|-----------|
 | langgraph | Agent orchestration |
-| sentence-transformers | Локальная embedding-модель |
-| transformers + torch | Локальная inference для embeddings |
-| httpx | HTTP client для LLM Gateway |
+| httpx | HTTP client для LLM Gateway и embeddings API |
 | qdrant-client | Vector store client |
 | sqlalchemy | DB introspection и query execution |
 | fastapi + uvicorn | API server |

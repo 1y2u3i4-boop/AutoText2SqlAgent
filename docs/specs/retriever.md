@@ -43,7 +43,7 @@
      - primary key;
      - foreign key и целевые связи.
 
-4. **Embedding**: локальная embedding-модель. Batch embedding для эффективности.
+4. **Embedding**: внешняя embedding-модель через OpenAI-compatible API. Batch embedding для эффективности.
 
 5. **Storage**: запись в Qdrant collection metadata_index с payload fields:
    - db_name, schema_name, table_name, object_type, column_names, has_description
@@ -57,7 +57,7 @@
 
 ### Шаги поиска
 
-1. **Query embedding**: та же локальная embedding-модель для запроса
+1. **Query embedding**: та же внешняя embedding-модель для запроса
 2. **Vector search**: Qdrant search() с параметрами:
    - limit: 20 (configurable)
    - query_filter: payload filter (если из Query Analyzer пришёл db_hint)
@@ -81,7 +81,7 @@
 | retriever.confidence_threshold | 0.6 | Минимальный confidence для продолжения без clarification |
 | retriever.rerank_enabled | true | Включить/выключить LLM reranking |
 | retriever.enrichment_enabled | true | Включить/выключить metadata enrichment |
-| retriever.embedding_model | configurable | Локальная модель для embeddings |
+| retriever.embedding_model | configurable | Внешняя модель для embeddings через OpenAI-compatible API |
 
 ## Контракты
 
@@ -120,7 +120,7 @@
 | Ограничение | Значение | Причина |
 |-------------|----------|---------|
 | Max документов в индексе | ~100K | Достаточно для текущего масштаба (Qdrant поддерживает значительно больше) |
-| Embedding batch size | 32 | Ограничение по локальной памяти / GPU VRAM |
+| Embedding batch size | 32 | Ограничение по размеру батча и latency budget |
 | Reranking latency | ≤ 2s | Budget из общего p95 target 8s |
 | Vector search latency | ≤ 500ms | Qdrant single-node |
 | Enrichment volume | ≤ 5 объектов (по числу top-N) | Ограничение размера контекста и latency budget |
@@ -130,7 +130,7 @@
 | Сбой | Обнаружение | Fallback |
 |------|-------------|----------|
 | Qdrant unavailable | ConnectionError | Hard stop, ошибка пользователю |
-| Embedding inference failure | RuntimeError / OOM | Retry 1x на CPU → hard stop |
+| Embedding API failure | HTTPError / Timeout | Retry по HTTP client policy → hard stop |
 | Reranking LLM timeout | HTTPError / Timeout | Продолжить без reranking (vector scores only) |
 | Enrichment metadata unavailable | Missing payload / cache miss | Продолжить без enrichment |
 | Пустой результат поиска | len(objects) == 0 | Clarification request к пользователю |

@@ -106,8 +106,8 @@
 
 ## Ограничения
 
-- Нет persistent memory между сессиями
+- Есть persistent user-specific memory между сессиями, но она ограничена search top-k и prompt budget
 - Нет summarization для длинных историй (только FIFO-усечение)
-- Нет user-specific memory (предпочтения, частые запросы)
-- Нет shared memory между пользователями
+- Shared memory между пользователями нет; память изолируется по `user_id`
+- Memory layer использует external embedding/LLM calls, поэтому влияет на latency и cost
 - Token counting - приблизительный (tiktoken), не exact match с API billing

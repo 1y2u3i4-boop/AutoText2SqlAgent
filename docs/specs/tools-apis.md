@@ -142,13 +142,13 @@
 - Statement timeout на уровне connection
 - Никакого dynamic SQL или parameter interpolation в строку (только parameterized queries)
 
-### 3. Local Embedding Tool
+### 3. Embedding Tool
 
 | Параметр | Значение |
 |----------|----------|
-| **Provider** | local embedding runtime |
-| **Модель** | Конфигурируемая локальная embedding-модель |
-| **Inference mode** | in-process через sentence-transformers / FlagEmbedding |
+| **Provider** | OpenAI-compatible embeddings API (например, OpenRouter) |
+| **Модель** | Конфигурируемая внешняя embedding-модель |
+| **Inference mode** | HTTPS API call |
 | **Vector size** | Зависит от выбранной модели |
 | **Context length** | Зависит от выбранной модели |
 | **Timeout** | 5s на batch |
@@ -165,13 +165,13 @@
 | Поле ответа | Тип | Описание |
 |-------------|-----|----------|
 | vectors | list[list[float]] | Построенные embedding-векторы |
-| model | string | Имя локальной модели |
-| latency_ms | float | Время inference |
+| model | string | Имя embedding-модели |
+| latency_ms | float | Время API-вызова |
 
 #### Защиты и ограничения
-- Batch size ограничивается локальной памятью и доступной VRAM
-- При ошибке GPU inference допускается fallback на CPU
-- Никакие данные не отправляются во внешний сервис
+- Batch size ограничивается размером запроса и latency budget
+- Ошибки сети/таймауты обрабатываются на уровне HTTP client
+- Данные отправляются во внешний embeddings API и должны соответствовать policy по данным
 
 ### 4. Vector Store Tool (Qdrant)
 

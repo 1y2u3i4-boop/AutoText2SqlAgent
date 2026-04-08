@@ -1,0 +1,68 @@
+llm:
+  gateway_url: "${LLM_GATEWAY_BASE_URL:-https://openrouter.ai/api}"
+  default_route: "qwen/qwen3.6-plus"
+  route_overrides:
+    text2sql: "qwen/qwen3.5-flash-02-23"
+  fallback_enabled: true
+  embedding_model: "openai/text-embedding-3-small"
+  temperature: 0.0
+  max_tokens: 2000
+  timeout_seconds: 30
+
+# Demo database (PostgresPro airline demo, started via docker-compose)
+databases:
+  - name: "demo"
+    url: "postgresql://postgres:postgres@demo-db:5432/demo"
+    readonly: true
+    query_timeout_seconds: 10
+    pool_size: 5
+
+retriever:
+  top_k: 20
+  top_n: 5
+  confidence_threshold: 0.6
+  rerank_enabled: true
+  enrichment_enabled: true
+  qdrant_url: "${AUTOTEXT2SQL_QDRANT_URL:-http://localhost:6333}"
+  qdrant_collection: "metadata_index"
+
+orchestrator:
+  max_retries_per_node: 2
+  backoff_base_seconds: 1.0
+  human_approval_timeout_seconds: 300
+  checkpointer_db: "./data/sessions.db"
+
+context:
+  max_total_tokens: 16000
+  system_prompt_tokens: 1500
+  max_history_tokens: 6000
+  max_schema_tokens: 6000
+  response_max_tokens: 2000
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: ["*"]
+  rate_limit_per_minute: 60
+
+observability:
+  log_level: "INFO"
+  log_format: "json"
+  enable_langsmith: false
+  langsmith_project: "autotext2sql"
+  otlp_endpoint: ""   # e.g. "http://localhost:4317" when otel-collector is running
+
+cost:
+  per_task_limit_usd: 0.10
+  daily_limit_usd: 5.00
+  weekly_limit_usd: 20.00
+
+memory:
+  enabled: false
+  provider: "mem0"
+  collection_name: "user_memory"
+  embedding_dimensions: 1536
+  search_top_k: 4
+  max_memories: 4
+  max_prompt_tokens: 1500
+  write_enabled: true
