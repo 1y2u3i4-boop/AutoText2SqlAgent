@@ -54,7 +54,48 @@ Health endpoint должен различать состояния:
 | promtail | Сбор container logs и отправка в Loki | Docker engine, loki |
 | grafana | Дашборды по Prometheus/Loki | prometheus, loki |
 
-Примерная конфигурация docker-compose и observability стека приведена в папке configuration
+Рабочая конфигурация compose и observability стека находится в папке `configuration`. Порядок старта и зависимости сервисов задаются в `docker-compose.yaml` через `depends_on`.
+
+### Процесс деплоя
+
+Deployment выполняется по стандартному циклу:
+
+1. **Подготовка окружения**
+   - Подготовить `.env` с обязательными переменными для LLM Gateway, БД и Qdrant.
+   - Проверить доступность внешних зависимостей: LLM Gateway и целевых БД.
+
+2. **Подготовка версии приложения**
+   - Собрать и опубликовать Docker image приложения.
+   - Зафиксировать версию image в переменной `AUTOTEXT2SQL_APP_IMAGE`.
+   - Подготовить release notes с изменениями в конфиге, маршрутизации LLM и schema/index pipeline.
+
+3. **Базовый запуск сервисов**
+   - Поднять базовый стек одной командой `docker compose up -d` (без `observability` profile).
+   - Порядок старта сервисов определяется `depends_on` в `docker-compose.yaml`.
+   - Проверить endpoint `/health` и убедиться, что статус `ok` или `degraded`.
+   - При первом запуске выполнить initial indexing через `indexer` profile или admin endpoint rebuild.
+
+4. **Запуск observability-стека**
+   - Поднять профиль `observability` (otel-collector, prometheus, loki, promtail, grafana).
+   - Проверить, что:
+     - Prometheus получает метрики из `/metrics`;
+     - логи приходят в Loki;
+     - Grafana подключена к Prometheus и Loki.
+
+5. **Пост-деплой валидация**
+   - Выполнить smoke-набор запросов: обычный поиск, low-relevance, SQL generation, approval flow.
+   - Проверить ключевые графики: `error.rate`, `latency.e2e_p95`, `provider_error_rate`, `provider_fallback_rate`, `cost.daily_usd`.
+   - Проверить, что при недоступности primary provider приложение переходит в `degraded`, но продолжает отвечать через fallback.
+
+6. **Обновление версии (rolling update для single-instance)**
+   - Обновить `AUTOTEXT2SQL_APP_IMAGE`.
+   - Перезапустить только `app` без удаления volume Qdrant.
+   - Повторить post-deploy валидацию и сравнить метрики с предыдущей версией.
+
+7. **Rollback**
+   - Вернуть предыдущий image и перезапустить `app`.
+   - При необходимости отключить problematic route в LLM Gateway policy.
+   - Проверить восстановление по `/health`, алертам и ключевым дашбордам.
 
 ## Конфигурация
 
